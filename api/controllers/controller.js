@@ -1,14 +1,13 @@
 var mysql = require('mysql');
 var pool = require('../../server')
+var userModel = require('../models/user')
 
 exports.getUser = function(req, res) {
-    pool.getConnection(function(err, connection) {
-        var sql = "SELECT * FROM user"
-        connection.query(sql, function(err, result) {
-            if(err) throw err
-            connection.release()
-            res.json(result)
-        })
+    // var result = userModel.getAllUser(res)
+    userModel.getAllUser((err, data) => {
+        if (err) throw err
+        console.log(data)
+        res.json(data)
     })
 }
 

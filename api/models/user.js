@@ -1,13 +1,21 @@
 var mysql = require('mysql')
 var pool = require('../../server')
 
-exports.getAllUser = function(req, res) {
+exports.getAllUser = function(cb) {
+    // console.log(pool)
     pool.getConnection(function(err, connection) {
         var sql = "SELECT * FROM user"
         connection.query(sql, function(err, result) {
-            if(err) throw err
+            if(err) cb(err)
+            // console.log(result)
+            // console.log(sql)
             connection.release()
-            res.json(result)
+            cb(null, result)
         })
     })
+
+    // _enqueueCallback(cb)
+
+
 }
+
