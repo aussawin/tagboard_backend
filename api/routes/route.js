@@ -1,5 +1,5 @@
 module.exports = function(app){
-    var controller = require('../controllers/controller')
+    var controller = require('../controllers/userController')
 
     app.route('/getuser')
         .get(controller.getUser)

@@ -1,9 +1,8 @@
 var mysql = require('mysql');
 var pool = require('../../server')
-var userModel = require('../models/user')
+var userModel = require('../models/userModel')
 
 exports.getUser = function(req, res) {
-    // var result = userModel.getAllUser(res)
     userModel.getAllUser((err, data) => {
         if (err) throw err
         console.log(data)
