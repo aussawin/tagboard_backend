@@ -11,7 +11,7 @@ var pool = mysql.createPool({
     password : '',
     database : 'tagboard'
 });
-
+global.pool = pool
 module.exports = pool;
 
 app.use(bodyParser.urlencoded({

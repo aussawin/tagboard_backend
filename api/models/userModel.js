@@ -1,5 +1,5 @@
 var mysql = require('mysql')
-var pool = require('../../server')
+var pool = global.pool
 
 exports.getAllUser = function(cb) {
     pool.getConnection(function(err, connection) {

@@ -1,5 +1,4 @@
 var mysql = require('mysql');
-var pool = require('../../server')
 var userModel = require('../models/userModel')
 
 exports.getUser = function(req, res) {
