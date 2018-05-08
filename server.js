@@ -19,7 +19,7 @@ app.use(bodyParser.urlencoded({
 }))
 app.use(bodyParser.json())
 
-let route = require('./api/routes/route')
+let route = require('./api/routes/userRoute')
 route(app)
 
 app.listen(port)
