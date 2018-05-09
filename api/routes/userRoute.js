@@ -3,8 +3,9 @@ module.exports = function(app){
 //TESTo
     app.route('/api/getAllUser')
         .get(userController.getUser)
+        
     app.route('/api/createdUser')
-        .get(userController.createUser)
+        .post(userController.createUser)
 
     app.route('/api/login')
         .post(userController.login)

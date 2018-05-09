@@ -50,7 +50,7 @@ exports.createUser = function(req, res) {
     pool.getConnection(function(err, connection) {
         var sql = "INSERT INTO user (username, password, name, email, bio, imgurl, created_at, updated_at) VALUES ?"
         var date = new Date()
-        var data = req.data
+        var data = req.body
         var values = [
             [data.username, bcrypt.hashSync(data.password, salt), data.name, data.email, data.bio, data.imgurl, date, date]
         ]
