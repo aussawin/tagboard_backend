@@ -32,8 +32,8 @@ exports.login = function(req, res) {
     })
 }
 
-exports.verifying = function(req, res) {
-    if (req.headers.authentication) {
+exports.verifyToken = function(req, res) {
+    if (req.headers.Authentication) {
         var token = req.headers.authentication
         jwt.verify(token, secretKey, function(err, result){
             var uid = result.userid
