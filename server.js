@@ -19,8 +19,10 @@ app.use(bodyParser.urlencoded({
 }))
 app.use(bodyParser.json())
 
-let route = require('./api/routes/route')
+let route = require('./api/routes/userRoute')
+let postRoute = require('./api/routes/contentRoute')
 route(app)
+postRoute(app)
 
 app.listen(port)
 console.log('Server started on: ' + port )
