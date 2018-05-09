@@ -1,6 +1,6 @@
 module.exports = function(app){
     var userController = require('../controllers/userController')
-//TESTo
+    
     app.route('/api/getAllUser')
         .get(userController.getUser)
         
