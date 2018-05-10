@@ -37,8 +37,10 @@ exports.getUserByUserId = function(uid, callback) {
 
 exports.createAUser = function(user, callback) {
     let sql = "INSERT INTO user (username, password, name, email, bio, imgurl, created_at, updated_at) VALUES ?"
-    database.query(sql, user)
+    console.log(user)
+    database.query(sql, [user])
         .then((result) => {
+            console.log(result)
             callback(null, result)
             database.release()
         }).catch((err) => {
