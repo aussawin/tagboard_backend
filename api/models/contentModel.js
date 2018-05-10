@@ -1,7 +1,6 @@
 const mysql = require('mysql')
 const database = require('../../database')
 const fs = require('fs')
-// const multer = require('multer')
 
 exports.getSubscribedTagPost = function(callback) {
     let sql = 'SELECT tag_id FROM user_subscribe ' +
@@ -29,23 +28,7 @@ exports.getSubscribedTagPost = function(callback) {
             return database.query(sql)
         })
         .then(result => {
-            let postArray = []
-
-            for (i in result) {
-                let post = {
-                    "subject" : result[i].subject,
-                    "content" : result[i].content,
-                    "view" : result[i].view,
-                    "no_of_comment" : result[i].no_of_comment,
-                    "no_of_like" : result[i].no_of_like,
-                    "created_by" : result[i].created_by,
-                    "created_at" : result[i].created_at
-                }
-
-                postArray.push(post)
-            }
-
-            callback(null, postArray)
+            callback(null, result)
             database.release()
         })
         .catch(error => {
