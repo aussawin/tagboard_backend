@@ -12,7 +12,6 @@ exports.getAllUser = function(callback) {
             callback(err)
         });
 }
-
 exports.getUserByUsername = function(username, callback) {
     let sql = 'SELECT * FROM user WHERE username = "'+username+'"'
     database.query(sql)

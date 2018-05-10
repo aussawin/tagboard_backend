@@ -65,6 +65,7 @@ exports.uploadPostImage = function(req, res) {
     let upload = multer({ storage: storage }).single('image')
 
     upload(req, res, next => {
-        res.json("http://localhost:8081/" + req.file.path)
+        res.send("/images/post/" + req.file.filename)
+        console.log("upload successful")
     })
 }
