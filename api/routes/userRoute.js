@@ -1,8 +1,9 @@
 module.exports = function(app){
     var controller = require('../controllers/userController')
-
-    app.route('/getuser')
+//TESTo
+    app.route('/api/getAllUser')
         .get(controller.getUser)
-    app.route('/create')
+    app.route('/api/createdUser')
         .get(controller.createUser)
+
 } 
