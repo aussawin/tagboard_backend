@@ -7,11 +7,10 @@ const path = require('path')
 app = express()
 port = process.env.PORT || 8081
 
-var pool = mysql.createPool(config);
-global.pool = pool;
-global.config = config;
+pool = mysql.createPool(config)
+global.pool = pool
+global.config = config
 
-app.use(bodyParser.urlencoded({ extended : true }))
 app.use(bodyParser.json())
 app.use('/public', express.static(path.join(__dirname, 'public')))
 
