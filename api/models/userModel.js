@@ -1,15 +1,14 @@
 var mysql = require('mysql')
 var pool = global.pool
 
-exports.getAllUser = function(cb) {
-    pool.getConnection(function(err, connection) {
-        var sql = 'SELECT * FROM user'
-        connection.query(sql, function(err, result) {
-            if(err) cb(err)
-            connection.release()
-            cb(null, result)
-        })
-    })
+exports.getAllUser = function(callback) {
+    let sql = 'SELECT * FROM user'
+    database.query(sql)
+        .then((result) => {
+            return result
+        }).catch((err) => {
+            callback(null, result)
+        });
 }
 
 exports.getUserByUsername = function(username, cb) {
