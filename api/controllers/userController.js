@@ -6,8 +6,28 @@ var userModel = require('../models/userModel')
 var secretKey = 'tagboard_secretkey'
 var salt = bcrypt.genSaltSync(10)
 
-exports.getUser = function(req, res) {
+exports.getAllUser = function(req, res) {
     userModel.getAllUser((err, data) => {
+        if (err) throw err
+        console.log(data)
+        res.json(data)
+    })
+}
+
+exports.getUserInfo = function(req, res) {
+    console.log("req.uid : " + req.uid)
+    userModel.getUserInformation(req.uid, (err, data) => {
+        if (err) throw err
+        console.log(data)
+        res.json(data)
+    })
+}
+
+exports.updateUserInformation = function(req, res) {
+    var newData = req.body
+    var havePwd = (newData.password == "" ? null : bcrypt.hashSync(newData.password, salt));
+    console.log(havePwd)
+    userModel.updateUserInformation(req.uid, newData, havePwd, function(err, data) {
         if (err) throw err
         console.log(data)
         res.json(data)
@@ -38,7 +58,7 @@ exports.login = function(req, res) {
     })
 }
 
-exports.verifyToken = function(req, res) {
+exports.verifyToken = function(req, res, next) {
     console.log(req.headers.authorization)
     if (req.headers.authorization) {
         var token = req.headers.authorization
@@ -47,10 +67,16 @@ exports.verifyToken = function(req, res) {
             console.log(decoded)
             userModel.getUserByUserId(decoded.payload.userid, function(err, data) {
                 if (err) throw err
-                data.length != 0 ? next() : res.status(401).send('Invalid userid')
+                if (data.length != 0) {
+                    req.uid = data[0].user_id
+                    return next()
+                }
+                else {
+                    res.status(401).send('Invalid userid')
+                }
             })
         }
-        else{
+        else {
             res.status(401).send('Invalid token')
         }
     }
