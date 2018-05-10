@@ -12,12 +12,14 @@ global.pool = pool
 global.config = config
 
 app.use(bodyParser.json())
-app.use('/public', express.static(path.join(__dirname, 'public')))
+app.use('/images', express.static(path.join(__dirname, 'public/images')))
 
 let route = require('./api/routes/userRoute')
-let postRoute = require('./api/routes/contentRoute')
+let contentRoute = require('./api/routes/contentRoute')
+let postRoute = require('./api/routes/postRoute')
 
 route(app)
+contentRoute(app)
 postRoute(app)
 
 app.listen(port)

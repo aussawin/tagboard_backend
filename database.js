@@ -10,23 +10,32 @@ class Database {
             self.connection = connection
         })
     }
-    query(sql, args) {
+    query(sql, args, connection) {
         return new Promise((resolve, reject) => {
-            this.connection.query(sql, args, (error, result) => {
+            connection.query(sql, args, (error, result) => {
                 if (error) return reject(error);
                 
                 resolve(result);
             } );
         } );
     }
-    release() {
+    release(connection) {
         return new Promise((resolve, reject) => {
-            this.connection.release(error => {
+            connection.release(error => {
                 if (error) return reject(error);
                 
                 resolve();
             } );
         } );
+    }
+    getConnection() {
+        return new Promise((resolve, reject) => {
+            global.pool.getConnection(function(error, connection) {
+                if (error) reject(error)
+                
+                resolve(connection)
+            })
+        })
     }
 }
 

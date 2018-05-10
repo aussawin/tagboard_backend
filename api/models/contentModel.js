@@ -7,46 +7,78 @@ exports.getSubscribedTagPost = function(callback) {
     let sql = 'SELECT tag_id FROM user_subscribe ' +
               'WHERE user_id = 1'
     
-    database.query(sql)
+    let con
+
+    database.getConnection()
+        .then(connection => {
+            con = connection
+            return database.query(sql, null, con)
+        })
         .then(result => {
             let tagArray = ''
 
             for (i = 0; i < result.length; i++) {
-                tagArray += result[i].tag_id
-
-                if (i != result.length - 1) {
-                    tagArray += ', '
-                }
+                tagArray += ' ' + result[i].tag_id + ','
             }
 
-            sql = 'SELECT subject, content, created_at, view, no_of_comment, no_of_like, created_by ' + 
+            tagArray = tagArray.slice(0, -1)
+
+            sql = 'SELECT post.subject, post.content, post.created_at, post.view, post.no_of_comment, post.no_of_like, ' +
+                  'tag.tag_name, post.post_id ' +
                   'FROM post_tag ' +
                   'INNER JOIN post ON post_tag.post_id = post.post_id ' +
-                  'WHERE post_tag.tag_id IN (' + tagArray + ') ' +
-                  'GROUP BY post.post_id ' + 
-                  'ORDER BY created_at DESC'
+                  'INNER JOIN tag ON tag.tag_id = post_tag.tag_id ' +
+                  'WHERE post_tag.tag_id IN (1, 2) ' +
+                  'ORDER BY created_at DESC '
 
-            return database.query(sql)
+            return database.query(sql, null, con)
         })
         .then(result => {
-            let postArray = []
+            var post_array = []
+            var tagname_array = []
+            var subject_array = []
+            var content_array = []
+            var created_at_array = []
+            var view_array = []
+            var no_of_comment_array = []
+            var no_of_like_array = []
 
-            for (i in result) {
-                let post = {
-                    "subject" : result[i].subject,
-                    "content" : result[i].content,
-                    "view" : result[i].view,
-                    "no_of_comment" : result[i].no_of_comment,
-                    "no_of_like" : result[i].no_of_like,
-                    "created_by" : result[i].created_by,
-                    "created_at" : result[i].created_at
+            result.forEach(element => {
+                var isContain = post_array.includes(element.post_id)
+                if (!isContain) {
+                    post_array.push(element.post_id)
+                    tagname_array.push(element.tag_name)
+                    subject_array.push(element.subject)
+                    content_array.push(element.content)
+                    created_at_array.push(element.created_at)
+                    view_array.push(element.view)
+                    no_of_comment_array.push(element.no_of_comment)
+                    no_of_like_array.push(element.no_of_like)
                 }
-
-                postArray.push(post)
+                else {
+                    var index = post_array.indexOf(element.post_id)
+                    tagname_array[index] += ',' + element.tag_name
+                }
+            })
+            
+            var data = []
+            
+            for (i=0; i<post_array.length; i++) {
+                data.push({
+                    post_id : post_array[i],
+                    tag_name : tagname_array[i],
+                    subject : subject_array[i],
+                    content : content_array[i],
+                    created_at : created_at_array[i],
+                    view : view_array[i],
+                    no_of_comment : no_of_comment_array[i],
+                    no_of_like : no_of_like_array[i]
+                })
             }
+            console.log(data)
 
-            callback(null, postArray)
-            database.release()
+            callback(null, data)
+            database.release(con)
         })
         .catch(error => {
             console.log(error)
@@ -60,7 +92,13 @@ exports.getMostSubscribed = function(callback) {
               'GROUP BY user_subscribe.tag_id ' +
               'ORDER BY no_of_sub DESC LIMIT 5'
 
-    database.query(sql)
+    let con
+
+    database.getConnection()
+        .then(connection => {
+            con = connection
+            return database.query(sql, null, con)
+        })
         .then(result => {
             callback(null, result)
             database.release()
@@ -73,8 +111,13 @@ exports.getMostSubscribed = function(callback) {
 exports.getHotPost = function(callback) {
     let sql = 'SELECT post_id, subject FROM post ' + 
               'ORDER BY view DESC LIMIT 5'
+    let con
 
-    database.query(sql)
+    database.getConnection()
+        .then(connection => {
+            con = connection
+            return database.query(sql, null, con)
+        })
         .then(result => {
             callback(null, result)
             database.release()
@@ -82,29 +125,91 @@ exports.getHotPost = function(callback) {
 }
 
 exports.addPost = function(data, callback) {
-    let sql = 'INSERT INTO post (subject, content, view, created_by, no_of_comment, no_of_like) ' +
-              'VALUES ("' +
-              data.subject + '", "' +
-              data.content + '", ' +
-              '0, "' +
-              data.created_by + '", ' +
-              '0, 0)'
-    
-    database.query(sql)
-        .then(result => {
-            console.log(result)
-            if (result.affectedRows != 0) {
-                console.log(result.insertId)
-                sql = 'SELECT * FROM post ' +
-                      'WHERE post.post_id = ' + result.insertId
+    let tags = data.tags.split(',')
+    let sql = 'INSERT INTO post SET ?'
+    let body = {
+        subject : data.subject,
+        content : data.content,
+        view : 0,
+        created_by : 1,
+        no_of_comment : 0,
+        no_of_like : 0
+    }
+    let status = true
+    let post_id
+    let con
 
-                return database.query(sql)
+    database.getConnection()
+        .then(connection => {
+            con = connection
+            return database.query(sql, body, con)
+        })
+        .then(result => {
+            if (result.affectedRows != 0) {
+                post_id = result.insertId
+
+                sql = 'SELECT tag_name from tag ' +
+                      'INNER JOIN post_tag ON tag.tag_id = post_tag.tag_id ' +
+                      'GROUP BY tag.tag_id'
+                
+                return database.query(sql, null, con)
             }
         })
         .then(result => {
-            callback(null, result)
-            database.release()
+            sql = 'INSERT INTO tag (tag_name) VALUES'
+
+            let oldTag = []
+            let count = 0
+            
+            result.forEach(element => {
+                oldTag.push(element.tag_name)
+            })
+
+            tags.forEach(element => {
+                if (!oldTag.includes(element)) {
+                    sql += ' ("' + element + '"),'
+
+                    count++
+                }
+            })
+
+            sql = sql.slice(0, -1)
+
+            return count > 0? database.query(sql, null, con) : null
         })
+        .then(result => {
+            let tagsArray = []
+            
+            for (i = 0; i < tags.length; i++) {
+                tagsArray.push('"' + tags[i] + '"')
+            }
+
+            sql = 'SELECT tag_id FROM tag ' +
+                  'WHERE tag_name IN (' + tagsArray + ')'
+
+            return database.query(sql, null, con)
+        })
+        .then(result => {
+            sql = 'INSERT INTO post_tag (post_id, tag_id) VALUES'
+
+            for (i = 0; i < result.length; i++) {
+                sql += ' (' + post_id + ', ' + result[i].tag_id + '),'
+            }
+
+            sql = sql.slice(0, -1)
+
+            return database.query(sql, null, con)
+        })
+        .then(result => {
+            sql = 'SELECT * FROM post WHERE post_id = ' + post_id
+
+            return database.query(sql, null, con)
+        })
+        .then(result => {
+            callback(null, result[0])
+            return database.release(con)
+        })
+        .then(() => {})
         .catch(error => {
             console.log(error)
         })

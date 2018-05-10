@@ -15,6 +15,7 @@ exports.getUser = function(req, res) {
 }
 
 exports.login = function(req, res) {
+    console.log(req.body)
     userModel.getUserByUsername(req.body.username, (err, data) => {
         if(err) throw err
         console.log(data[0])

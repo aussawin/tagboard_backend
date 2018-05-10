@@ -12,6 +12,7 @@ exports.getAllUser = function(callback) {
 }
 
 exports.getUserByUsername = function(username, cb) {
+    console.log(username)
     pool.getConnection(function(err, connection) {
         var sql = 'SELECT * FROM user WHERE username = "'+username+'"'
         connection.query(sql, function(err, result) {
