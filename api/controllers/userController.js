@@ -71,18 +71,12 @@ exports.verifyToken = function(req, res, next) {
                     req.uid = data[0].user_id
                     return next()
                 }
-                else {
-                    res.status(401).send('Invalid userid')
-                }
+                else { res.status(401).send('Invalid userid') }
             })
         }
-        else {
-            res.status(401).send('Invalid token')
-        }
+        else { res.status(401).send('Invalid token') }
     }
-    else {
-        res.status(401).send('Cannot get header')
-    }
+    else { res.status(401).send('Cannot get header') }
     
 }
 

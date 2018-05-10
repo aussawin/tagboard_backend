@@ -4,17 +4,12 @@ module.exports = function(app){
     app.route('/api/getAllUser')
         .get(userController.getAllUser)
         
-    app.route('/api/createdUser')
-        .post(userController.createUser)
-
     app.route('/api/login')
         .post(userController.login)
-        
-    app.route('/verify')
-        .get(userController.verifyToken)
 
-    app.route('/api/getUser')
+    app.route('/api/user')
         .get(userController.verifyToken, userController.getUserInfo)
+        .post(userController.createUser)
         .patch(userController.verifyToken, userController.updateUserInformation)
 
 } 
