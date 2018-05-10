@@ -3,32 +3,16 @@ const pool = require('../../server')
 const contentModel = require('../models/contentModel')
 const multer = require('multer')
 
-exports.getSubscribedTagPost = function(req, res) {
-    contentModel.getSubscribedTagPost((error, data) => {
+exports.getFeed = function(req, res) {
+    contentModel.getFeed((error, data) => {
         if (error) throw error
 
-        let postArray = []
-
-        for (i in data) {
-            let post = {
-                "subject" : data[i].subject,
-                "content" : data[i].content,
-                "view" : data[i].view,
-                "no_of_comment" : data[i].no_of_comment,
-                "no_of_like" : data[i].no_of_like,
-                "created_by" : data[i].created_by,
-                "created_at" : data[i].created_at
-            }
-
-            postArray.push(post)
-        }
-
-        res.json(postArray)
+        res.json(data)
     })
 }
 
-exports.getMostSubcribedTag = function(req, res) {
-    contentModel.getMostSubscribed((error, data) => {
+exports.getMostSubscriber = function(req, res) {
+    contentModel.getMostSubscriber((error, data) => {
         if (error) throw error
 
         res.json(data)
@@ -67,5 +51,22 @@ exports.uploadPostImage = function(req, res) {
     upload(req, res, next => {
         res.send("/images/post/" + req.file.filename)
         console.log("upload successful")
+    })
+}
+
+exports.tagSearch = function(req, res) {
+    contentModel.tagSearch(req.params.tagName, (error, data) => {
+        if (error) throw error  
+
+        console.log(data)
+        res.json(data)
+    })
+}
+
+exports.textSearch = function(req, res) {
+    contentModel.textSearch(req.params.text, (error, data) => {
+        if (error) throw error
+
+        res.json(data)
     })
 }

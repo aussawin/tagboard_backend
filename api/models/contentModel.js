@@ -1,9 +1,8 @@
 const mysql = require('mysql')
 const database = require('../../database')
 const fs = require('fs')
-// const multer = require('multer')
 
-exports.getSubscribedTagPost = function(callback) {
+exports.getFeed = function(callback) {
     let sql = 'SELECT tag_id FROM user_subscribe ' +
               'WHERE user_id = 1'
     
@@ -23,12 +22,12 @@ exports.getSubscribedTagPost = function(callback) {
 
             tagArray = tagArray.slice(0, -1)
 
-            sql = 'SELECT post.subject, post.content, post.created_at, post.view, post.no_of_comment, post.no_of_like, ' +
+            sql = 'SELECT post.subject, post.created_at, post.view, post.no_of_comment, post.no_of_like, ' +
                   'tag.tag_name, post.post_id ' +
                   'FROM post_tag ' +
                   'INNER JOIN post ON post_tag.post_id = post.post_id ' +
                   'INNER JOIN tag ON tag.tag_id = post_tag.tag_id ' +
-                  'WHERE post_tag.tag_id IN (1, 2) ' +
+                  'WHERE post_tag.tag_id IN (' + tagArray + ') ' +
                   'ORDER BY created_at DESC '
 
             return database.query(sql, null, con)
@@ -37,7 +36,6 @@ exports.getSubscribedTagPost = function(callback) {
             var post_array = []
             var tagname_array = []
             var subject_array = []
-            var content_array = []
             var created_at_array = []
             var view_array = []
             var no_of_comment_array = []
@@ -49,7 +47,6 @@ exports.getSubscribedTagPost = function(callback) {
                     post_array.push(element.post_id)
                     tagname_array.push(element.tag_name)
                     subject_array.push(element.subject)
-                    content_array.push(element.content)
                     created_at_array.push(element.created_at)
                     view_array.push(element.view)
                     no_of_comment_array.push(element.no_of_comment)
@@ -60,19 +57,20 @@ exports.getSubscribedTagPost = function(callback) {
                     tagname_array[index] += ',' + element.tag_name
                 }
             })
-            
+
+            console.log(tagname_array)
+
             var data = []
             
             for (i=0; i<post_array.length; i++) {
                 data.push({
                     post_id : post_array[i],
-                    tag_name : tagname_array[i],
-                    subject : subject_array[i],
-                    content : content_array[i],
-                    created_at : created_at_array[i],
-                    view : view_array[i],
-                    no_of_comment : no_of_comment_array[i],
-                    no_of_like : no_of_like_array[i]
+                    tags : tagname_array[i],
+                    title : subject_array[i],
+                    post_at : created_at_array[i],
+                    views : view_array[i],
+                    likes : no_of_comment_array[i],
+                    comments : no_of_like_array[i]
                 })
             }
             console.log(data)
@@ -85,7 +83,7 @@ exports.getSubscribedTagPost = function(callback) {
         })
 }
 
-exports.getMostSubscribed = function(callback) {
+exports.getMostSubscriber = function(callback) {
     let sql = 'SELECT tag.tag_name AS tag_name, COUNT(*) AS no_of_sub ' +
               'FROM user_subscribe ' +
               'INNER JOIN tag ON tag.tag_id = user_subscribe.tag_id ' +
@@ -100,8 +98,9 @@ exports.getMostSubscribed = function(callback) {
             return database.query(sql, null, con)
         })
         .then(result => {
+            console.log(result)
             callback(null, result)
-            database.release()
+            database.release(con)
         })
         .catch(error => {
             console.log(error)
@@ -109,7 +108,7 @@ exports.getMostSubscribed = function(callback) {
 }
 
 exports.getHotPost = function(callback) {
-    let sql = 'SELECT post_id, subject FROM post ' + 
+    let sql = 'SELECT post_id, subject AS title FROM post ' + 
               'ORDER BY view DESC LIMIT 5'
     let con
 
@@ -120,7 +119,7 @@ exports.getHotPost = function(callback) {
         })
         .then(result => {
             callback(null, result)
-            database.release()
+            database.release(con)
         })
 }
 
@@ -214,3 +213,167 @@ exports.addPost = function(data, callback) {
             console.log(error)
         })
 }
+
+exports.tagSearch = function(tagName, callback) {
+    let sql = 'SELECT post_tag.post_id FROM tag ' +
+              'INNER JOIN post_tag ON post_tag.tag_id = tag.tag_id ' +
+              'WHERE tag.tag_name = "#' + tagName + '" ' +
+              'GROUP BY post_tag.post_id'
+    let con
+
+    database.getConnection()
+        .then(connection => {
+            con = connection
+            return database.query(sql, null, con)
+        })
+        .then(result => {
+            let postArray = ''
+
+            for (i = 0; i < result.length; i++) {
+                postArray += ' ' + result[i].post_id + ','
+            }
+
+            postArray = postArray.slice(0, -1)
+
+            sql = 'SELECT post.subject, post.created_at, post.view, post.no_of_comment, post.no_of_like, ' +
+                  'tag.tag_name, post.post_id ' +
+                  'FROM post_tag ' +
+                  'INNER JOIN post ON post_tag.post_id = post.post_id ' +
+                  'INNER JOIN tag ON tag.tag_id = post_tag.tag_id ' +
+                  'WHERE post.post_id IN (' + postArray + ') ' +
+                  'ORDER BY created_at DESC '
+
+            return database.query(sql, null, con)
+        })
+        .then(result => {
+            var post_array = []
+            var tagname_array = []
+            var subject_array = []
+            var created_at_array = []
+            var view_array = []
+            var no_of_comment_array = []
+            var no_of_like_array = []
+
+            result.forEach(element => {
+                var isContain = post_array.includes(element.post_id)
+                if (!isContain) {
+                    post_array.push(element.post_id)
+                    tagname_array.push(element.tag_name)
+                    subject_array.push(element.subject)
+                    created_at_array.push(element.created_at)
+                    view_array.push(element.view)
+                    no_of_comment_array.push(element.no_of_comment)
+                    no_of_like_array.push(element.no_of_like)
+                }
+                else {
+                    var index = post_array.indexOf(element.post_id)
+                    tagname_array[index] += ',' + element.tag_name
+                }
+            })
+
+            console.log(tagname_array)
+
+            var data = []
+            
+            for (i=0; i<post_array.length; i++) {
+                data.push({
+                    post_id : post_array[i],
+                    tags : tagname_array[i],
+                    title : subject_array[i],
+                    post_at : created_at_array[i],
+                    views : view_array[i],
+                    likes : no_of_comment_array[i],
+                    comments : no_of_like_array[i]
+                })
+            }
+            console.log(data)
+
+            callback(null, data)
+            database.release(con)
+        })
+        .catch(error => {
+            console.log(error)
+        })
+}
+
+exports.textSearch = function(text, callback) {
+    let sql = 'SELECT post_id FROM post ' +
+              'WHERE (subject LIKE "%' + text + '") OR ' +
+              '(subject LIKE "' + text + '%") OR ' +
+              '(subject LIKE "%' + text + '%")'
+    let con
+
+    database.getConnection()
+        .then(connection => {
+            con = connection
+            return database.query(sql, null, con)
+        })
+        .then(result => {
+            let postArray = ''
+
+            for (i = 0; i < result.length; i++) {
+                postArray += ' ' + result[i].post_id + ','
+            }
+
+            postArray = postArray.slice(0, -1)
+
+            sql = 'SELECT post.subject, post.created_at, post.view, post.no_of_comment, post.no_of_like, ' +
+                  'tag.tag_name, post.post_id ' +
+                  'FROM post_tag ' +
+                  'INNER JOIN post ON post_tag.post_id = post.post_id ' +
+                  'INNER JOIN tag ON tag.tag_id = post_tag.tag_id ' +
+                  'WHERE post.post_id IN (' + postArray + ') ' +
+                  'ORDER BY created_at DESC '
+
+            return database.query(sql, null, con)
+        })
+        .then(result => {
+            var post_array = []
+            var tagname_array = []
+            var subject_array = []
+            var created_at_array = []
+            var view_array = []
+            var no_of_comment_array = []
+            var no_of_like_array = []
+
+            result.forEach(element => {
+                var isContain = post_array.includes(element.post_id)
+                if (!isContain) {
+                    post_array.push(element.post_id)
+                    tagname_array.push(element.tag_name)
+                    subject_array.push(element.subject)
+                    created_at_array.push(element.created_at)
+                    view_array.push(element.view)
+                    no_of_comment_array.push(element.no_of_comment)
+                    no_of_like_array.push(element.no_of_like)
+                }
+                else {
+                    var index = post_array.indexOf(element.post_id)
+                    tagname_array[index] += ',' + element.tag_name
+                }
+            })
+
+            console.log(tagname_array)
+
+            var data = []
+            
+            for (i=0; i<post_array.length; i++) {
+                data.push({
+                    post_id : post_array[i],
+                    tags : tagname_array[i],
+                    title : subject_array[i],
+                    post_at : created_at_array[i],
+                    views : view_array[i],
+                    likes : no_of_comment_array[i],
+                    comments : no_of_like_array[i]
+                })
+            }
+            console.log(data)
+
+            callback(null, data)
+            database.release(con)
+        })
+        .catch(error => {
+            console.log(error)
+        })
+ }

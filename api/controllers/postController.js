@@ -3,25 +3,41 @@ const pool = require('../../server')
 const postModel = require('../models/postModel')
 
 exports.addComment = function(req, res) {
-    postModel.addComment(req.params, req.body, (error, data) => {
+    postModel.addComment(req.params.postId, req.body, (error, data) => {
         if (error) throw error
 
         res.json(data)
     })
 }
 
-exports.readPost = function(req, res) {
+exports.getPost = function(req, res) {
     console.log(req.params)
-    postModel.readPost(req.params, (error, data) => {
+    postModel.getPost(req.params.postId, (error, data) => {
         if (error) throw err
 
         res.json(data)
     })
 }
 
-exports.readComment = function(req, res) {
-    postModel.readComment(req.params.postId, req.body.start, (error, data) => {
+exports.getComment = function(req, res) {
+    postModel.getComment(req.params.postId, req.body.start, (error, data) => {
         if (error) throw err
+
+        res.json(data)
+    })
+}
+
+exports.getMyPost = function(req, res) {
+    postModel.getMyPost(req.pamars.username, (error, data) => {
+        if (error) throw error
+
+        res.json(data)
+    })
+}
+
+exports.updatePostView = function(req, res) {
+    postModel.updatePostView(req.params.postId, (error, data) => {
+        if (error) throw error
 
         res.json(data)
     })
