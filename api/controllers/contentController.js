@@ -7,7 +7,23 @@ exports.getSubscribedTagPost = function(req, res) {
     contentModel.getSubscribedTagPost((error, data) => {
         if (error) throw error
 
-        res.json(data)
+        let postArray = []
+
+        for (i in data) {
+            let post = {
+                "subject" : data[i].subject,
+                "content" : data[i].content,
+                "view" : data[i].view,
+                "no_of_comment" : data[i].no_of_comment,
+                "no_of_like" : data[i].no_of_like,
+                "created_by" : data[i].created_by,
+                "created_at" : data[i].created_at
+            }
+
+            postArray.push(post)
+        }
+
+        res.json(postArray)
     })
 }
 
