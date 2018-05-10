@@ -10,5 +10,7 @@ module.exports = function(app){
     app.route('/api/login')
         .post(userController.login)
         
+    app.route('/verify')
+        .get(userController.verifyToken)
 
 } 

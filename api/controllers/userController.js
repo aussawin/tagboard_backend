@@ -17,47 +17,61 @@ exports.getUser = function(req, res) {
 exports.login = function(req, res) {
     userModel.getUserByUsername(req.body.username, (err, data) => {
         if(err) throw err
-        console.log(data[0])
-        var user = data[0]
-        bcrypt.compare(req.body.password, user.password, function(err, bool) {
-            console.log(bool)
-            if (bool) {
-                var token = jwt.sign({ userid: user.user_id, username: user.username }, secretKey)
-                res.json({'token': token})
-            }
-            else {
-                res.status(401)
-            }
-        });
+        if(data.length == 0){
+            res.sendStatus(401)
+        }
+        else {
+            console.log(data[0])
+            var user = data[0]
+            bcrypt.compare(req.body.password, user.password, function(err, bool) {
+                if (bool) {
+                    var token = jwt.sign({ userid: user.user_id, username: user.username }, secretKey)
+                    res.json({'token': token})
+                }
+                else {
+                    res.sendStatus(401)
+                }
+            });
+        }
+        
     })
 }
 
 exports.verifyToken = function(req, res) {
-    if (req.headers.Authentication) {
-        var token = req.headers.authentication
-        jwt.verify(token, secretKey, function(err, result){
-            var uid = result.userid
-            userModel.getUserByUserId(uid, function(err, data) {
+    console.log(req.headers.authorization)
+    if (req.headers.authorization) {
+        var token = req.headers.authorization
+        var decoded = jwt.decode(token, {complete: true})
+        if (decoded) {
+            console.log(decoded)
+            userModel.getUserByUserId(decoded.payload.userid, function(err, data) {
                 if (err) throw err
-                console.log(data)
-                next()
+                data.length != 0 ? next() : res.status(401).send('Invalid userid')
             })
-        })
+        }
+        else{
+            res.status(401).send('Invalid token')
+        }
     }
+    else {
+        res.status(401).send('Cannot get header')
+    }
+    
 }
 
 exports.createUser = function(req, res) {
-    pool.getConnection(function(err, connection) {
-        var sql = "INSERT INTO user (username, password, name, email, bio, imgurl, created_at, updated_at) VALUES ?"
-        var date = new Date()
-        var data = req.body
-        var values = [
-            [data.username, bcrypt.hashSync(data.password, salt), data.name, data.email, data.bio, data.imgurl, date, date]
-        ]
-        connection.query(sql, [values], function(err, result){
-            if(err) throw err
-            connection.release()
-            res.json(result)
-        })
+    var data = req.body
+    var user = [[data.username, 
+                bcrypt.hashSync(data.password, salt), 
+                data.name, 
+                data.email, 
+                data.bio, 
+                data.imgurl, 
+                new Date(), 
+                new Date()
+    ]]
+    userModel.createAUser(user, function(err, data) {
+        if(err) throw err
+        res.json(data)
     })
 }
