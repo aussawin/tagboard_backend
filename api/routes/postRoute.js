@@ -14,7 +14,7 @@ module.exports = function(app) {
         .get(userController.verifyToken)
         .post(controller.getComment)
 
-    app.route('/api/myfeed/:name')
+    app.route('/api/myfeed')
         .get(userController.verifyToken, controller.getMyPost)
     
     app.route('/api/view/:postId')

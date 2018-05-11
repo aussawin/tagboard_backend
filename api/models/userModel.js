@@ -56,7 +56,7 @@ exports.getUserInformation = function(uid, callback) {
     database.getConnection()
         .then((con) => {
             connection = con
-            let sql = 'SELECT username, name, email, bio, imgurl, COUNT(user.user_id) AS total_post FROM user ' +
+            let sql = 'SELECT user_id, username, name, email, bio, imgurl, COUNT(user.user_id) AS total_post FROM user ' +
                         'INNER JOIN post ' +
                         'ON post.created_by = user.user_id ' +
                         'WHERE user.user_id = '+uid
@@ -133,17 +133,25 @@ exports.updateUserInformation = function(uid, newUser, havePwd, callback) {
         })
 }
 
-exports.createAUser = function(user, callback) {
-    let sql = "INSERT INTO user (username, password, name, email, bio, imgurl, created_at, updated_at) VALUES ?"
+exports.createAUser = function(user, data, callback) {
     console.log(user)
     let connection
     database.getConnection()
         .then(con => {
+            console.log("username : " +user.username)
+            let sql = 'SELECT COUNT(user_id) AS num FROM user WHERE username = "' + data.username +'"'
             connection = con
-            return database.query(sql, [user], connection)
+            return database.query(sql, null, connection)
         })
         .then((result) => {
-            console.log(result)
+            if (result[0].num == 0) {
+                let sql = "INSERT INTO user (username, password, name, email, bio, imgurl, created_at, updated_at) VALUES ?"
+                return database.query(sql, [user], connection)
+            }
+            else {
+                callback(null, {status : "Same username"})
+            }
+        }).then((result) => {
             callback(null, result)
             database.release(connection)
         }).catch((err) => {

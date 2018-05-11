@@ -2,9 +2,9 @@ const mysql = require('mysql')
 const database = require('../../database')
 const fs = require('fs')
 
-exports.getFeed = function(callback) {
+exports.getFeed = function(user_id, callback) {
     let sql = 'SELECT tag_id FROM user_subscribe ' +
-              'WHERE user_id = 1'
+              'WHERE user_id = ' + user_id
     
     let con
 
@@ -69,8 +69,8 @@ exports.getFeed = function(callback) {
                     title : subject_array[i],
                     post_at : created_at_array[i],
                     views : view_array[i],
-                    likes : no_of_comment_array[i],
-                    comments : no_of_like_array[i]
+                    likes : no_of_like_array[i],
+                    comments : no_of_comment_array[i]
                 })
             }
             console.log(data)
@@ -123,99 +123,103 @@ exports.getHotPost = function(callback) {
         })
 }
 
-exports.addPost = function(data, callback) {
+exports.addPost = function(user_id, data, callback) {
     let tags = data.tags.split(',')
     let sql = 'INSERT INTO post SET ?'
     let body = {
         subject : data.subject,
         content : data.content,
         view : 0,
-        created_by : 1,
+        created_by : user_id,
         no_of_comment : 0,
         no_of_like : 0
     }
-    let status = true
-    let post_id
-    let con
+    let connection
+    let postId
+    let tagArray
+    let status
 
     database.getConnection()
-        .then(connection => {
-            con = connection
-            return database.query(sql, body, con)
+        .then(con => {
+            connection = con
+
+            return database.query(sql, body, connection)
         })
         .then(result => {
-            if (result.affectedRows != 0) {
-                post_id = result.insertId
+            if (result.affectedRows > 0) {
+                postId = result.insertId
+                tagArray = ''
 
-                sql = 'SELECT tag_name from tag ' +
-                      'INNER JOIN post_tag ON tag.tag_id = post_tag.tag_id ' +
-                      'GROUP BY tag.tag_id'
-                
-                return database.query(sql, null, con)
-            }
-        })
-        .then(result => {
-            sql = 'INSERT INTO tag (tag_name) VALUES'
-
-            let oldTag = []
-            let count = 0
-            
-            result.forEach(element => {
-                oldTag.push(element.tag_name)
-            })
-
-            tags.forEach(element => {
-                if (!oldTag.includes(element)) {
-                    sql += ' ("' + element + '"),'
-
-                    count++
+                for (i = 0; i < tags.length; i++) {
+                    tagArray += '"' + tags[i] + '",'
                 }
-            })
 
-            sql = sql.slice(0, -1)
+                tagArray = tagArray.slice(0, -1)
 
-            return count > 0? database.query(sql, null, con) : null
-        })
-        .then(result => {
-            let tagsArray = []
-            
-            for (i = 0; i < tags.length; i++) {
-                tagsArray.push('"' + tags[i] + '"')
+                sql = 'SELECT tag_id from tag ' +
+                      'WHERE tag.tag_name IN (' + tagArray + ')'
+
+                return database.query(sql, null, connection)
             }
-
-            sql = 'SELECT tag_id FROM tag ' +
-                  'WHERE tag_name IN (' + tagsArray + ')'
-
-            return database.query(sql, null, con)
         })
         .then(result => {
-            sql = 'INSERT INTO post_tag (post_id, tag_id) VALUES'
+            if (result.length == 0) {
+                status = false
+                sql = 'INSERT INTO tag (tag_name) ' +
+                      'VALUES '
+
+                for (i = 0; i < tags.length; i++) {
+                    sql += '("' + tags[i] + '"),'
+                }
+
+                sql = sql.slice(0, -1)
+
+                return database.query(sql, null, connection)
+            } else {
+                return result
+            }
+        })
+        .then(result => {
+            console.log(result)
+            if (!status) {
+                sql = 'SELECT tag_id FROM tag ' +
+                      'WHERE tag.tag_name IN (' + tagArray + ')'
+
+                return database.query(sql, null, connection)
+            } else {
+                return result
+            }
+        })
+        .then(result => {
+            let tagIdArray = ''
 
             for (i = 0; i < result.length; i++) {
-                sql += ' (' + post_id + ', ' + result[i].tag_id + '),'
+                tagIdArray += '(' + postId + ', ' + result[i].tag_id + '),'
             }
 
-            sql = sql.slice(0, -1)
+            tagIdArray = tagIdArray.slice(0, -1)
 
-            return database.query(sql, null, con)
+            sql = 'INSERT INTO post_tag (post_id, tag_id) ' +
+                  'VALUES ' + tagIdArray
+
+            return database.query(sql, null, connection)
         })
         .then(result => {
-            sql = 'SELECT * FROM post WHERE post_id = ' + post_id
+            if (result.affectedRows > 0) {
+                let response = {
+                    post_id: post_id
+                }
 
-            return database.query(sql, null, con)
+                callback(null, response)
+                database.release(connection)
+            }
         })
-        .then(result => {
-            callback(null, result[0])
-            return database.release(con)
-        })
-        .then(() => {})
         .catch(error => {
             console.log(error)
         })
 }
 
 exports.tagSearch = function(tagName, callback) {
-    console.log(tagName)
     let sql = 'SELECT post_tag.post_id FROM tag ' +
               'INNER JOIN post_tag ON post_tag.tag_id = tag.tag_id ' +
               'WHERE tag.tag_name = "#' + tagName + '" ' +
@@ -283,11 +287,13 @@ exports.tagSearch = function(tagName, callback) {
                         title : subject_array[i],
                         post_at : created_at_array[i],
                         views : view_array[i],
-                        likes : no_of_comment_array[i],
-                        comments : no_of_like_array[i]
+                        likes : no_of_like_array[i],
+                        comments : no_of_comment_array[i]
                     })
                 }
             }
+
+            console.log(data)
 
             callback(null, data)
             database.release(con)
@@ -364,8 +370,8 @@ exports.textSearch = function(text, callback) {
                         title : subject_array[i],
                         post_at : created_at_array[i],
                         views : view_array[i],
-                        likes : no_of_comment_array[i],
-                        comments : no_of_like_array[i]
+                        likes : no_of_like_array[i],
+                        comments : no_of_comment_array[i]
                     })
                 }
             }
@@ -396,22 +402,18 @@ exports.subscribeTag = function(tagName, user_id, callback) {
             return result.length == 0? database.query(sql, null, connection) : null
         })
         .then(result => {
-            if (result != null) {
-                sql = 'SELECT tag_id FROM tag WHERE tag_name = "#' + tagName + '"'
-            
-                return result.affectedRows > 0? database.query(sql, null, connection) : null
-            } else return null
+            sql = 'SELECT tag_id FROM tag WHERE tag_name = "#' + tagName + '"'
+
+            return database.query(sql, null, connection)
         })
         .then(result => {
-            if (result != null) {
-                sql = 'INSERT INTO user_subscribe SET ?'
-                let body = {
-                    user_id: user_id,
-                    tag_id: result[0].tag_id
-                }
-
-            return result.length > 0? database.query(sql, body, connection) : null
+            sql = 'INSERT INTO user_subscribe SET ?'
+            let body = {
+                user_id: user_id,
+                tag_id: result[0].tag_id
             }
+
+            return database.query(sql, body, connection)
         })
         .then(result => {
             let response = {

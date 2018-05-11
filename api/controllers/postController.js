@@ -28,7 +28,7 @@ exports.getComment = function(req, res) {
 }
 
 exports.getMyPost = function(req, res) {
-    postModel.getMyPost(req.params.name, (error, data) => {
+    postModel.getMyPost(req.uid, (error, data) => {
         if (error) throw error
 
         res.json(data)
@@ -52,7 +52,7 @@ exports.deletePost = function(req, res) {
 }
 
 exports.likePost = function(req, res) {
-    postModel.likePost(req.params.postId, (error, data) => {
+    postModel.likePost(req.uid, req.params.postId, (error, data) => {
         if (error) throw error
 
         res.json(data)

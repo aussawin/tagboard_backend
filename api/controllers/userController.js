@@ -83,6 +83,7 @@ exports.verifyToken = function(req, res, next) {
 
 exports.createUser = function(req, res) {
     var data = req.body
+    console.log("CREATED USER !!!!!!!!!!!!")
     var user = [[data.username, 
                 bcrypt.hashSync(data.password, salt), 
                 data.name, 
@@ -92,7 +93,7 @@ exports.createUser = function(req, res) {
                 new Date(), 
                 new Date()
     ]]
-    userModel.createAUser(user, function(err, data) {
+    userModel.createAUser(user, data, function(err, data) {
         if(err) throw err
         res.json(data)
     })

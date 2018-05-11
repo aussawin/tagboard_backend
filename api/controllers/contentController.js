@@ -4,7 +4,7 @@ const contentModel = require('../models/contentModel')
 const multer = require('multer')
 
 exports.getFeed = function(req, res) {
-    contentModel.getFeed((error, data) => {
+    contentModel.getFeed(req.uid, (error, data) => {
         if (error) throw error
 
         res.json(data)
@@ -28,7 +28,7 @@ exports.getHotPost = function(req, res) {
 }
 
 exports.addPost = function(req, res) {
-    contentModel.addPost(req.body, (error, data) => {
+    contentModel.addPost(req.uid, req.body, (error, data) => {
         if (error) throw error
 
         res.json(data)

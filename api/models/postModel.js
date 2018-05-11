@@ -9,6 +9,7 @@ exports.addComment = function(postId, data, callbaack) {
               data.created_by + ', ' +
               postId + ')'
     let con
+    let insertId
 
     database.getConnection()
         .then(connection => {
@@ -17,6 +18,7 @@ exports.addComment = function(postId, data, callbaack) {
         })
         .then(result => {
             if (result.affectedRows > 0) {
+                insertId = result.insertId
                 sql = 'SELECT no_of_comment AS comments FROM post ' +
                       'WHERE post_id = ' + postId
 
@@ -28,22 +30,18 @@ exports.addComment = function(postId, data, callbaack) {
             sql = 'UPDATE post ' + 
                   'SET no_of_comment = ' + comments + ' ' +
                   'WHERE post_id = ' + postId
-            
-            console.log("comment3: " + comments)
 
             return database.query(sql, null, con)
         })
         .then(result => {
-            if (result.affectedRows > 0) {
                 sql = 'SELECT comment.content, user.name, user.imgurl FROM comment ' +
                       'INNER JOIN user ON comment.created_by = user.user_id ' +
-                      'WHERE comment.comment_id = ' + result.insertId
+                      'WHERE comment.comment_id = ' + insertId
 
                 return database.query(sql, null, con)
-            }
         })
         .then(result => {
-            console.log(result)
+            console.log("addComment: " +  result)
             callbaack(null, result)
             database.release(con)
         })
@@ -53,7 +51,7 @@ exports.addComment = function(postId, data, callbaack) {
 }
 
 exports.getPost = function(postId, callback) {
-    let sql = 'SELECT post.subject, post.content, post.view, post.created_at, post.no_of_comment, post.no_of_like, user.name, user.bio ' +
+    let sql = 'SELECT post.subject, post.content, post.view, post.created_at, post.no_of_comment, post.no_of_like, user.name, user.bio, user.imgurl ' +
               'FROM post INNER JOIN user ON post.created_by = user.user_id ' +
               'WHERE post.post_id = ' + postId
     let con
@@ -94,14 +92,14 @@ exports.getComment = function(postId, start, callback) {
         })
 }
 
-exports.getMyPost = function(name, callback) {
+exports.getMyPost = function(post_id, callback) {
     let sql = 'SELECT post.subject, post.created_at, post.view, post.no_of_comment, post.no_of_like, ' +
               'tag.tag_name, post.post_id ' +
               'FROM user ' +
               'INNER JOIN post ON post.created_by = user.user_id ' +
               'INNER JOIN post_tag ON post_tag.post_id = post.post_id ' +
               'INNER JOIN tag ON tag.tag_id = post_tag.tag_id ' +
-              'WHERE user.name = "' + name + '" ' +
+              'WHERE user.user_id = ' + post_id + ' ' +
               'ORDER BY created_at DESC'
     let connection
 
@@ -148,11 +146,11 @@ exports.getMyPost = function(name, callback) {
                     title : subject_array[i],
                     post_at : created_at_array[i],
                     views : view_array[i],
-                    likes : no_of_comment_array[i],
-                    comments : no_of_like_array[i]
+                    likes : no_of_like_array[i],
+                    comments : no_of_comment_array[i]
                 })
             }
-            console.log(data)
+            console.log("myfeed: " + data)
 
             callback(null, data)
             database.release(con)
@@ -224,7 +222,7 @@ exports.deletePost = function(postId, callback) {
         })
 }
 
-exports.likePost = function(postId, callback) {
+exports.likePost = function(user_id, postId, callback) {
     let connection
     let likeNo
     let isLiked
@@ -233,42 +231,58 @@ exports.likePost = function(postId, callback) {
     database.getConnection()
         .then(con => {
             connection = con
-            sql = 'SELECT COUNT(*) AS liked, post.no_of_like AS like_no FROM like_by ' +
-                      'INNER JOIN post ON post.post_id = like_by.post_id ' +
-                      'WHERE post.post_id = ' + postId
-                      + ' AND user_id = ' + req.uid
+            sql = 'SELECT COUNT(*) AS likes FROM like_by ' +
+                  'WHERE post_id = ' + postId
+                  + ' AND user_id = ' + user_id
 
             return database.query(sql, null, connection)
         })
         .then(result => {
-            console.log("like: " + result[0].liked)
-            likeNo = parseInt(result[0].like_no)
-            sql = 'UPDATE post '
-
-            if(!result[0].liked) {
-                likeNo++
-                sql += 'SET no_of_like = ' + likeNo
-                isLiked = true
-            } else {
-                likeNo--
-                sql += 'SET no_of_like = ' + likeNo
+            if (result[0].likes == 0) {
                 isLiked = false
+            } else isLiked = true
+
+            sql = 'SELECT no_of_like FROM post ' +
+                  'WHERE post_id = ' + postId
+                
+            return database.query(sql, null, connection)
+        })
+        .then(result => {
+            if (isLiked) {
+                likeNo = parseInt(result[0].no_of_like) - 1
+                isLiked = false
+            } else {
+                likeNo = parseInt(result[0].no_of_like) + 1
+                isLiked = true
             }
 
-            sql += ' WHERE post_id = ' + postId
+            console.log(likeNo)
+
+            sql = 'UPDATE post ' +
+                    'SET no_of_like = ' + likeNo + ' ' +
+                    'WHERE post_id = ' + postId + ' '
 
             return database.query(sql, null, connection)
         })
         .then(result => {
-            sql = 'DELETE like_by ' +
-                  'WHERE post_id = ' + postId
-                  + ' AND user_id = ' + req.uid
+            console.log(isLiked)
+            if (!isLiked) {
+                sql = 'DELETE FROM like_by ' +
+                      'WHERE (post_id = ' + postId
+                      + ') AND (user_id = ' + user_id + ')'
+                
+                console.log(sql)
+            } else {
+                sql = 'INSERT INTO like_by (post_id, user_id)' +
+                      'VALUES (' + postId + ', ' + user_id + ')'
+            }
 
-            return !isLiked? database.query(sql, null, connection) : null
+            return database.query(sql, null, connection)
         })
         .then(result => {
+            console.log(result)
             let response = {
-                likes: likeNo
+                like: likeNo
             }
 
             callback(null, response)
