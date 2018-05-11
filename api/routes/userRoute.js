@@ -1,20 +1,17 @@
 module.exports = function(app){
     var userController = require('../controllers/userController')
     
-    app.route('/api/getAllUser')
-        .get(userController.getAllUser)
-        
-    app.route('/api/createdUser')
+    app.route('/api/createUser')
         .post(userController.createUser)
-
+        
     app.route('/api/login')
         .post(userController.login)
-        
-    app.route('/verify')
-        .get(userController.verifyToken)
 
-    app.route('/api/getUser')
+    app.route('/api/user')
         .get(userController.verifyToken, userController.getUserInfo)
-        .patch(userController.verifyToken, userController.updateUserInformation)
+        .post(userController.verifyToken, userController.updateUserInformation)
+
+    app.route('/api/uploaduserimage')
+        .post(userController.uploadUserImage)
 
 } 

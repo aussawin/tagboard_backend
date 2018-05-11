@@ -56,12 +56,10 @@ exports.getUserInformation = function(uid, callback) {
     database.getConnection()
         .then((con) => {
             connection = con
-            console.log("QUERY!!")
             let sql = 'SELECT username, name, email, bio, imgurl, COUNT(user.user_id) AS total_post FROM user ' +
                         'INNER JOIN post ' +
                         'ON post.created_by = user.user_id ' +
                         'WHERE user.user_id = '+uid
-            console.log("1!!")
             return database.query(sql, null, connection)
         })
         .then((result) => {
@@ -73,7 +71,6 @@ exports.getUserInformation = function(uid, callback) {
                         'INNER JOIN like_by ' +
                         'ON post.post_id = like_by.post_id ' +
                         'WHERE user.user_id = '+uid
-            console.log("2!!")
             return database.query(sql, null, connection)
         })
         .then((result) => {
@@ -85,7 +82,6 @@ exports.getUserInformation = function(uid, callback) {
                         'INNER JOIN comment ' +
                         'ON post.post_id = comment.post_id ' +
                         'WHERE user.user_id = '+uid
-            console.log("3!!")
             return database.query(sql, null, connection)
         })
         .then((result) => {
@@ -113,10 +109,13 @@ exports.getUserInformation = function(uid, callback) {
 exports.updateUserInformation = function(uid, newUser, havePwd, callback) {
     var pwdPhase = (havePwd == null ? '' : ', password = "' + havePwd + '" ');
     console.log("pwd : " + pwdPhase + " havePwd" + havePwd )
+    var date = new Date().toISOString().slice(0, 19).replace('T', ' ');
     let sql = 'UPDATE user ' + 
-                'SET username = "' + newUser.username + '", ' +
+                'SET name = "' + newUser.name + '", ' +
                 'bio = "' + newUser.bio + '", ' + 
-                'email = "' + newUser.email + '" '+
+                'email = "' + newUser.email + '", ' +
+                'imgurl = "' + newUser.imgurl + '", ' +
+                'updated_at = "' + date + '" ' +
                 pwdPhase +
                 'WHERE user_id= ' +uid
     console.log(sql)
