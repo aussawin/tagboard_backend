@@ -101,7 +101,7 @@ exports.getMyPost = function(name, callback) {
               'INNER JOIN post ON post.created_by = user.user_id ' +
               'INNER JOIN post_tag ON post_tag.post_id = post.post_id ' +
               'INNER JOIN tag ON tag.tag_id = post_tag.tag_id ' +
-              'WHERE user.name = ' + name + ' ' +
+              'WHERE user.name = "' + name + '" ' +
               'ORDER BY created_at DESC'
     let connection
 
@@ -166,6 +166,7 @@ exports.updatePostView = function(postId, callback) {
     let sql = 'SELECT view FROM post ' +
               'WHERE post_id = ' + postId + ' '
     let connection
+    let view
 
     database.getConnection()
         .then(con => {
@@ -173,7 +174,7 @@ exports.updatePostView = function(postId, callback) {
             return database.query(sql, null, connection)
         })
         .then(result => {
-            let view = parseInt(result[0].view) + 1
+            view = parseInt(result[0].view) + 1
 
             sql = 'UPDATE post ' +
                   'SET view = ' + view + ' ' +
@@ -184,12 +185,94 @@ exports.updatePostView = function(postId, callback) {
         .then(result => {
             if (result.affectedRows > 0) {
                 let response = {
-                    message: "view updated successful"
+                    view: view
                 }
 
                 callback(null, response)
                 database.release(connection)
             }
+        })
+        .catch(error => {
+            console.log(error)
+        })
+}
+
+exports.deletePost = function(postId, callback) {
+    let connection
+
+    database.getConnection()
+        .then(con => {
+            connection = con
+
+            let sql = 'DELETE FROM post ' +
+                      'WHERE post_id = ' + postId
+
+            return database.query(sql, null, connection)
+        })
+        .then(result => {
+            if (result.affectedRows > 0) {
+                let response = {
+                    message: "DELETE SUCCESSFUL!"
+                }
+
+                callback(null, response)
+                database.release(connection)
+            }
+        })
+        .catch(error => {
+            console.log(error)
+        })
+}
+
+exports.likePost = function(postId, callback) {
+    let connection
+    let likeNo
+    let isLiked
+    let sql
+
+    database.getConnection()
+        .then(con => {
+            connection = con
+            sql = 'SELECT COUNT(*) AS liked, post.no_of_like AS like_no FROM like_by ' +
+                      'INNER JOIN post ON post.post_id = like_by.post_id ' +
+                      'WHERE post.post_id = ' + postId
+                      + ' AND user_id = ' + req.uid
+
+            return database.query(sql, null, connection)
+        })
+        .then(result => {
+            console.log("like: " + result[0].liked)
+            likeNo = parseInt(result[0].like_no)
+            sql = 'UPDATE post '
+
+            if(!result[0].liked) {
+                likeNo++
+                sql += 'SET no_of_like = ' + likeNo
+                isLiked = true
+            } else {
+                likeNo--
+                sql += 'SET no_of_like = ' + likeNo
+                isLiked = false
+            }
+
+            sql += ' WHERE post_id = ' + postId
+
+            return database.query(sql, null, connection)
+        })
+        .then(result => {
+            sql = 'DELETE like_by ' +
+                  'WHERE post_id = ' + postId
+                  + ' AND user_id = ' + req.uid
+
+            return !isLiked? database.query(sql, null, connection) : null
+        })
+        .then(result => {
+            let response = {
+                likes: likeNo
+            }
+
+            callback(null, response)
+            database.release(connection)
         })
         .catch(error => {
             console.log(error)

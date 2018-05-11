@@ -28,7 +28,7 @@ exports.getComment = function(req, res) {
 }
 
 exports.getMyPost = function(req, res) {
-    postModel.getMyPost(req.pamars.username, (error, data) => {
+    postModel.getMyPost(req.params.name, (error, data) => {
         if (error) throw error
 
         res.json(data)
@@ -37,6 +37,22 @@ exports.getMyPost = function(req, res) {
 
 exports.updatePostView = function(req, res) {
     postModel.updatePostView(req.params.postId, (error, data) => {
+        if (error) throw error
+
+        res.json(data)
+    })
+}
+
+exports.deletePost = function(req, res) {
+    postModel.deletePost(req.params.postId, (error, data) => {
+        if (error) throw error
+
+        res.json(data)
+    })
+}
+
+exports.likePost = function(req, res) {
+    postModel.likePost(req.params.postId, (error, data) => {
         if (error) throw error
 
         res.json(data)

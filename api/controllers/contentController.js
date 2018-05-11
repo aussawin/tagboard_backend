@@ -70,3 +70,11 @@ exports.textSearch = function(req, res) {
         res.json(data)
     })
 }
+
+exports.subscribeTag = function(req, res) {
+    contentModel.subscribeTag(req.params.tagName, req.uid, (error, data) => {
+        if (error) throw error
+
+        res.json(data)
+    })
+}

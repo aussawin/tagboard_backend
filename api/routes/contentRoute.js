@@ -1,24 +1,28 @@
 module.exports = function(app){
-    var controller = require('../controllers/contentController')
+    const controller = require('../controllers/contentController')
+    const userController = require('../controllers/userController')
 
     app.route('/api/feed')
-        .get(controller.getFeed)
+        .get(userController.verifyToken, controller.getFeed)
 
     app.route('/api/mostsub')
-        .get(controller.getMostSubscriber)
+        .get(userController.verifyToken, controller.getMostSubscriber)
 
     app.route('/api/hotpost')
-        .get(controller.getHotPost)
+        .get(userController.verifyToken, controller.getHotPost)
 
     app.route('/api/post')
-        .post(controller.addPost)
+        .post(userController.verifyToken, controller.addPost)
         
     app.route('/api/uploadpostimage')
-        .post(controller.uploadPostImage)
+        .post(userController.verifyToken, controller.uploadPostImage)
 
     app.route('/api/tagsearch/:tagName')
-        .get(controller.tagSearch)
+        .get(userController.verifyToken, controller.tagSearch)
     
     app.route('/api/textsearch/:text')
-        .get(controller.textSearch)
+        .get(userController.verifyToken, controller.textSearch)
+
+    app.route('/api/subscribe/:tagName')
+        .get(userController.verifyToken, controller.subscribeTag)
 }
