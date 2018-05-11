@@ -2,6 +2,7 @@ var mysql = require('mysql');
 var bcrypt = require('bcrypt')
 var jwt = require('jsonwebtoken')
 var userModel = require('../models/userModel')
+var multer = require('multer')
 
 var secretKey = 'tagboard_secretkey'
 var salt = bcrypt.genSaltSync(10)
@@ -94,5 +95,24 @@ exports.createUser = function(req, res) {
     userModel.createAUser(user, function(err, data) {
         if(err) throw err
         res.json(data)
+    })
+}
+
+exports.uploadUserImage = function(req, res) {
+    let storage = multer.diskStorage({
+        destination: (req, file, cb) => {
+            cb(null, './public/images/user/')
+        },
+        filename: (req, file, cb) => {
+            let type = file.originalname.split('.')
+            cb(null, "img-" + Date.now() + '.' + type[1])
+        }
+    })
+    
+    let upload = multer({ storage: storage }).single('image')
+
+    upload(req, res, next => {
+        res.send("/images/user/" + req.file.filename)
+        console.log("upload successful")
     })
 }

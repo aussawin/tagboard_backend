@@ -111,7 +111,7 @@ exports.updateUserInformation = function(uid, newUser, havePwd, callback) {
     console.log("pwd : " + pwdPhase + " havePwd" + havePwd )
     var date = new Date().toISOString().slice(0, 19).replace('T', ' ');
     let sql = 'UPDATE user ' + 
-                'SET username = "' + newUser.username + '", ' +
+                'SET name = "' + newUser.name + '", ' +
                 'bio = "' + newUser.bio + '", ' + 
                 'email = "' + newUser.email + '", ' +
                 'imgurl = "' + newUser.imgurl + '", ' +
